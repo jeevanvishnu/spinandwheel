@@ -644,7 +644,7 @@ export default function SpinWheel() {
 
       {/* FOOTER */}
       <footer className="max-w-4xl mx-auto text-center border-t border-pink-200 pt-8 pb-4 text-pink-600/60 text-sm font-light">
-        <p>&copy; {new Date().getFullYear()} Nucis & Co. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} citynuts. All rights reserved.</p>
       </footer>
 
       {/* CONGRATULATIONS MODAL */}
