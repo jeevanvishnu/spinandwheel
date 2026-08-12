@@ -674,7 +674,7 @@ export default function SpinWheel() {
             </p>
 
             <div className="flex items-center justify-center gap-1 text-[9px] text-pink-400 font-mono mb-6 uppercase tracking-wider">
-              <span>Security verified via signature</span>
+              <span>Security verified: {transactionId || 'N/A'}</span>
             </div>
 
             {/* Modal Controls */}
