@@ -353,11 +353,11 @@ export default function SpinWheel() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-transparent text-slate-900 py-12 px-4 md:px-8">
+    <div className="w-full min-h-screen bg-transparent text-slate-900 pt-4 pb-12 px-4 md:px-8">
 
       {/* Header Info */}
-      <header className="max-w-6xl mx-auto flex justify-center text-center mb-10">
-        <img src={citynutsLogo} alt="Citynuts Logo" className="h-24 md:h-32 object-contain drop-shadow-sm mb-4" />
+      <header className="max-w-6xl mx-auto flex justify-center text-center mb-4">
+        <img src={citynutsLogo} alt="Citynuts Logo" className="h-24 md:h-32 object-contain drop-shadow-sm mb-0" />
       </header>
 
       {/* Main Grid */}
@@ -374,7 +374,7 @@ export default function SpinWheel() {
           />
 
           {/* HUD info */}
-          <div className="w-full flex justify-end items-center mb-10 z-10">
+          <div className="w-full flex justify-end items-center mb-4 z-10">
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               className="p-3 rounded-full bg-white hover:bg-pink-50 transition-colors border border-pink-200 text-rose-500 hover:text-rose-600 cursor-pointer shadow-sm"
