@@ -8,6 +8,14 @@ import {
   VolumeX
 } from 'lucide-react';
 import citynutsLogo from '../assets/Citynuts-logo.webp';
+import almondsImg from '../assets/almonds.png';
+import cashewsImg from '../assets/cashews.png';
+import discountImg from '../assets/discount.png';
+import shippingImg from '../assets/shipping.png';
+import pistachiosImg from '../assets/pistachios.png';
+import tryAgainImg from '../assets/try_again.png';
+import walnutsImg from '../assets/walnuts.png';
+import iphoneImg from '../assets/iphone.png';
 
 // ==========================================
 // Types & Interfaces
@@ -17,7 +25,7 @@ export interface Segment {
   description: string;
   color: string;
   textColor: string;
-  icon: string;
+  image: string;
 }
 
 // ==========================================
@@ -29,56 +37,56 @@ export const SEGMENTS: Segment[] = [
     description: "Hand-selected, slow-roasted organic Californian almonds.",
     color: "url(#grad-emerald)", // Vibrant Emerald
     textColor: "#ffffff",
-    icon: "🌰"
+    image: almondsImg
   },
   {
     label: "100g Cashews",
     description: "Jumbo gourmet cashews, lightly roasted and salted to perfection.",
     color: "url(#grad-gold)", // Vibrant Gold
     textColor: "#ffffff",
-    icon: "🥜"
+    image: cashewsImg
   },
   {
     label: "Discount 10%",
     description: "10% off your entire order of premium organic nuts.",
     color: "url(#grad-sapphire)", // Deep Sapphire
     textColor: "#ffffff",
-    icon: "🏷️"
+    image: discountImg
   },
   {
     label: "Free Shipping",
     description: "Free express cold-pack shipping on your next purchase.",
     color: "url(#grad-amethyst)", // Amethyst Purple
     textColor: "#ffffff",
-    icon: "🚚"
+    image: shippingImg
   },
   {
     label: "Pistachios Mix",
     description: "Shelled organic pistachios with a hint of sea salt and lime.",
     color: "url(#grad-emerald)",
     textColor: "#ffffff",
-    icon: "🟢"
+    image: pistachiosImg
   },
   {
     label: "Better Luck Next Time",
     description: "So close! Don't lose heart, try another spin.",
     color: "url(#grad-dark)", // Sleek Dark Gray
     textColor: "#a1a1aa",
-    icon: "🤞"
+    image: tryAgainImg
   },
   {
     label: "Walnut Pack",
     description: "100g pack of premium, brain-boosting raw walnut halves.",
     color: "url(#grad-gold)",
     textColor: "#ffffff",
-    icon: "🪵"
+    image: walnutsImg
   },
   {
     label: "iPhone 17",
     description: "The ultimate premium tech prize — Brand new iPhone 17.",
     color: "url(#grad-ruby)", // Crimson Red
     textColor: "#ffed4a", // Bright Gold Text
-    icon: "📱"
+    image: iphoneImg
   }
 ];
 
@@ -464,6 +472,10 @@ export default function SpinWheel() {
                     <stop offset="0%" stopColor="#52525b" />
                     <stop offset="100%" stopColor="#27272a" />
                   </radialGradient>
+                  
+                  <clipPath id="image-clip">
+                    <circle cx="0" cy="0" r="14" />
+                  </clipPath>
                 </defs>
 
                 <circle r="248" fill="none" stroke="url(#goldGradient)" strokeWidth="6" />
@@ -535,16 +547,18 @@ export default function SpinWheel() {
                           </text>
                         </g>
 
-                        {/* Emoji */}
+                        {/* Image */}
                         <g transform="translate(195, 0) rotate(90)">
-                          <text
-                            fontSize="18"
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            className="select-none filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
-                          >
-                            {seg.icon}
-                          </text>
+                          <image
+                            href={seg.image}
+                            x="-14"
+                            y="-14"
+                            height="28"
+                            width="28"
+                            preserveAspectRatio="xMidYMid slice"
+                            clipPath="url(#image-clip)"
+                            style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}
+                          />
                         </g>
                       </g>
                     );
@@ -655,7 +669,7 @@ export default function SpinWheel() {
 
             {/* Glowing Icon Frame */}
             <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-b from-rose-100 to-transparent flex items-center justify-center border border-pink-200 mb-6 shadow-lg relative">
-              <span className="text-4xl filter drop-shadow">{SEGMENTS[winningIndex].icon}</span>
+              <img src={SEGMENTS[winningIndex].image} className="w-14 h-14 rounded-full shadow-md object-cover" alt="" />
               <div className="absolute inset-0 rounded-full border border-pink-300 animate-ping opacity-25" />
             </div>
 
