@@ -195,9 +195,8 @@ export default function SpinWheel() {
       setRegisterError('Please enter a valid email address');
       return;
     }
-    const phoneDigits = formData.phone.replace(/\D/g, '');
-    if (phoneDigits.length < 10) {
-      setRegisterError('Please enter a valid phone number (at least 10 digits)');
+    if (formData.phone.trim().length === 0) {
+      setRegisterError('Please enter a phone number');
       return;
     }
     if (formData.invoice.trim().length < 3) {
@@ -208,7 +207,7 @@ export default function SpinWheel() {
     setIsRegistering(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/register', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -410,7 +409,7 @@ export default function SpinWheel() {
 
     if (winningIndex !== null && formData.invoice) {
       try {
-        await fetch('http://localhost:5000/api/update-prize', {
+        await fetch(`${import.meta.env.VITE_API_URL}/update-prize`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
