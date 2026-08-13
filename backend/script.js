@@ -87,6 +87,29 @@ app.put('/api/update-prize', async (req, res) => {
   }
 });
 
+// Health check / Keep-alive endpoint
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ status: 'alive' });
+});
+
+// Self-ping to keep Render free tier awake
+const backendUrl = process.env.BACKEND_URL;
+if (backendUrl) {
+  const https = require('https');
+  const http = require('http');
+  const client = backendUrl.startsWith('https') ? https : http;
+  
+  // Pings every 5 minutes (300,000 milliseconds)
+  // 5 seconds is too aggressive and can cause issues with Render
+  setInterval(() => {
+    client.get(`${backendUrl}/api/ping`, (resp) => {
+      console.log(`Self-ping to keep awake successful. Status: ${resp.statusCode}`);
+    }).on("error", (err) => {
+      console.error("Self-ping failed:", err.message);
+    });
+  }, 5 * 60 * 1000);
+}
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
