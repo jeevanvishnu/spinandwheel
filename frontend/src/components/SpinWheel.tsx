@@ -194,28 +194,22 @@ const simulateServerSpin = async (forcedIndex: number | null, segments: Segment[
 };
 
 // ==========================================
-// Helper: Counter-rotating Text Label
+// Helper: Radial Text Label
 // ==========================================
 function TextLabel({
   label,
   textColor,
-  segAngle,
-  liveRotation,
   radius,
 }: {
   label: string;
   textColor: string;
-  segAngle: number;
-  liveRotation: MotionValue<number>;
   radius: number;
 }) {
-  // Counter-rotate by -(liveRotation + segAngle) so text is always horizontal
-  const counterRotate = useTransform(liveRotation, (r) => -(r + segAngle));
   return (
-    <motion.g style={{ x: radius, y: 0, rotate: counterRotate }}>
+    <g transform={`translate(${radius}, 0)`}>
       <text
         fill={textColor}
-        fontSize="13.5"
+        fontSize="14"
         fontWeight="800"
         textAnchor="middle"
         dominantBaseline="middle"
@@ -223,29 +217,24 @@ function TextLabel({
       >
         {label}
       </text>
-    </motion.g>
+    </g>
   );
 }
 
 // ==========================================
-// Helper: Counter-rotating Image
+// Helper: Radial Image
 // ==========================================
 function ImageLabel({
   href,
-  segAngle,
-  liveRotation,
   radius,
 }: {
   href: string;
-  segAngle: number;
-  liveRotation: MotionValue<number>;
   radius: number;
 }) {
-  const counterRotate = useTransform(liveRotation, (r) => -(r + segAngle));
   if (!href) return null;
   
   return (
-    <motion.g style={{ x: radius, y: 0, rotate: counterRotate }}>
+    <g transform={`translate(${radius}, 0)`}>
       <image
         href={href}
         x="-15"
@@ -256,7 +245,7 @@ function ImageLabel({
         clipPath="url(#image-clip)"
         style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
       />
-    </motion.g>
+    </g>
   );
 }
 
@@ -332,8 +321,9 @@ export default function SpinWheel() {
       setRegisterError('Please enter a valid email address');
       return;
     }
-    if (formData.phone.trim().length === 0) {
-      setRegisterError('Please enter a phone number');
+    const phoneRegex = /^\+?[0-9]{8,15}$/;
+    if (!phoneRegex.test(formData.phone.trim())) {
+      setRegisterError('Please enter a valid phone number');
       return;
     }
     if (formData.invoice.trim().length < 3) {
@@ -625,7 +615,7 @@ export default function SpinWheel() {
                 if (!soundEnabled) initAudio(); // Initialize when turning sound on
                 setSoundEnabled(!soundEnabled);
               }}
-              className="p-3 rounded-full bg-white hover:bg-pink-50 transition-colors border border-pink-200 text-rose-500 hover:text-rose-600 cursor-pointer shadow-sm"
+              className="p-3 rounded-full bg-white hover:bg-rose-50 transition-colors border-2 border-pink-200 text-rose-500 cursor-pointer shadow-sm"
               title={soundEnabled ? "Mute audio" : "Unmute audio"}
               id="btn-sound-toggle"
             >
@@ -779,20 +769,16 @@ export default function SpinWheel() {
                           transform={`rotate(${anglePerSegment / 2})`}
                         />
 
-                        {/* Text Label — counter-rotated so it stays horizontal */}
+                        {/* Text Label */}
                         <TextLabel
                           label={seg.label}
                           textColor={seg.textColor}
-                          segAngle={segAngle}
-                          liveRotation={liveRotation}
                           radius={130}
                         />
 
-                        {/* Image — counter-rotated so it stays upright */}
+                        {/* Image */}
                         <ImageLabel
                           href={seg.image}
-                          segAngle={segAngle}
-                          liveRotation={liveRotation}
                           radius={200}
                         />
                       </g>
@@ -1016,7 +1002,11 @@ export default function SpinWheel() {
                   type="tel"
                   required
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^\d+]/g, '');
+                    const cleaned = val.replace(/(?!^)\+/g, '');
+                    setFormData({ ...formData, phone: cleaned });
+                  }}
                   className="w-full px-4 py-3 rounded-xl border border-pink-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none transition-all bg-white/50"
                   placeholder="Enter your phone number"
                 />

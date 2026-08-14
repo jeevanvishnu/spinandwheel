@@ -276,9 +276,9 @@ export default function AdminSpin() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           {segments.length === 0 ? (
-            <div className="col-span-full bg-white rounded-2xl p-8 text-center border border-slate-200">
+            <div className="p-8 text-center">
               <p className="text-slate-500 mb-4">No wheel segments configured yet.</p>
               <button
                 onClick={() => setIsAdding(true)}
@@ -288,46 +288,65 @@ export default function AdminSpin() {
               </button>
             </div>
           ) : (
-            segments.map((segment) => (
-              <div key={segment._id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col h-full">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="font-bold text-lg text-slate-800">{segment.label}</h3>
-                    <p className={`text-xs font-bold px-2.5 py-0.5 rounded-md mt-1 border inline-block ${
-                      (segment.count === undefined || segment.count === 0) 
-                        ? (segment.afterWin === 'random' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-red-50 text-red-600 border-red-100')
-                        : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                    }`}>
-                      {(segment.count === undefined || segment.count === 0) 
-                        ? (segment.afterWin === 'random' ? 'Win Randomly' : 'Disabled')
-                        : `Rigged: Spin #${segment.count} (${segment.afterWin === 'random' ? 'then Random' : 'then Disable'})`}
-                    </p>
-                  </div>
-                  {segment.imageURL && (
-                    <img 
-                      src={segment.imageURL.startsWith('/') ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${segment.imageURL}` : segment.imageURL} 
-                      alt="" 
-                      className="w-10 h-10 rounded-full object-cover shadow-sm bg-slate-100" 
-                    />
-                  )}
-                </div>
-                
-                <div className="flex justify-end gap-2 mt-auto pt-4 border-t border-slate-100">
-                  <button
-                    onClick={() => handleEditClick(segment)}
-                    className="text-xs font-bold text-blue-500 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(segment._id)}
-                    className="text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Label</th>
+                    <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Image</th>
+                    <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                    <th className="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {segments.map((segment) => (
+                    <tr key={segment._id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-4 px-6">
+                        <span className="font-bold text-slate-800">{segment.label}</span>
+                      </td>
+                      <td className="py-4 px-6">
+                        {segment.imageURL ? (
+                          <img 
+                            src={segment.imageURL.startsWith('/') ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${segment.imageURL}` : segment.imageURL} 
+                            alt="" 
+                            className="w-10 h-10 rounded-full object-cover shadow-sm bg-slate-100" 
+                          />
+                        ) : (
+                          <span className="text-slate-400 text-sm italic">No image</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-md border inline-block ${
+                          (segment.count === undefined || segment.count === 0) 
+                            ? (segment.afterWin === 'random' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-red-50 text-red-600 border-red-100')
+                            : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                        }`}>
+                          {(segment.count === undefined || segment.count === 0) 
+                            ? (segment.afterWin === 'random' ? 'Win Randomly' : 'Disabled')
+                            : `Rigged: Spin #${segment.count} (${segment.afterWin === 'random' ? 'then Random' : 'then Disable'})`}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEditClick(segment)}
+                            className="text-xs font-bold text-blue-500 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(segment._id)}
+                            className="text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
