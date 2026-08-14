@@ -151,8 +151,7 @@ export default function AdminSpin() {
     setEditingSegment(segment);
     setFormData({
       label: segment.label,
-      imageURL: segment.imageURL || '',
-      count: segment.count || 0
+      imageURL: segment.imageURL || ''
     });
     setImageFile(null);
     setIsAdding(true);

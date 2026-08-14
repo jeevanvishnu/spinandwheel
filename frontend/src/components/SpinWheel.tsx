@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, useAnimation, useMotionValue, useTransform, MotionValue } from 'framer-motion';
+import { motion, useAnimation, useMotionValue } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import {
   Sparkles,
@@ -121,7 +121,7 @@ interface SpinResponse {
   serverTimestamp: string;
 }
 
-const simulateServerSpin = async (forcedIndex: number | null, segments: Segment[], currentSpin: number | null): Promise<SpinResponse> => {
+const simulateServerSpin = async (_forcedIndex: number | null, segments: Segment[], currentSpin: number | null): Promise<SpinResponse> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       const spinNum = currentSpin || 1;
