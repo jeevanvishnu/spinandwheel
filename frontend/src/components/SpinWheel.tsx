@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { motion, useAnimation, useMotionValue, useTransform, MotionValue } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import {
   Sparkles,
@@ -22,72 +22,74 @@ import iphoneImg from '../assets/iphone.png';
 // ==========================================
 export interface Segment {
   label: string;
-  description: string;
   color: string;
   textColor: string;
   image: string;
+  count?: number;
+  afterWin?: string;
 }
 
 // ==========================================
 // Segments Configuration (8 segments as required)
 // ==========================================
-export const SEGMENTS: Segment[] = [
+export const DEFAULT_SEGMENTS: Segment[] = [
   {
     label: "50g Almonds",
-    description: "Hand-selected, slow-roasted organic Californian almonds.",
     color: "url(#grad-emerald)", // Vibrant Emerald
     textColor: "#ffffff",
     image: almondsImg
   },
   {
     label: "100g Cashews",
-    description: "Jumbo gourmet cashews, lightly roasted and salted to perfection.",
     color: "url(#grad-gold)", // Vibrant Gold
     textColor: "#ffffff",
     image: cashewsImg
   },
   {
     label: "Discount 10%",
-    description: "10% off your entire order of premium organic nuts.",
     color: "url(#grad-sapphire)", // Deep Sapphire
     textColor: "#ffffff",
     image: discountImg
   },
   {
     label: "Free Shipping",
-    description: "Free express cold-pack shipping on your next purchase.",
     color: "url(#grad-amethyst)", // Amethyst Purple
     textColor: "#ffffff",
     image: shippingImg
   },
   {
     label: "Pistachios Mix",
-    description: "Shelled organic pistachios with a hint of sea salt and lime.",
     color: "url(#grad-emerald)",
     textColor: "#ffffff",
     image: pistachiosImg
   },
   {
     label: "Better Luck Next Time",
-    description: "So close! Don't lose heart, try another spin.",
     color: "url(#grad-dark)", // Sleek Dark Gray
     textColor: "#a1a1aa",
     image: tryAgainImg
   },
   {
     label: "Walnut Pack",
-    description: "100g pack of premium, brain-boosting raw walnut halves.",
     color: "url(#grad-gold)",
     textColor: "#ffffff",
     image: walnutsImg
   },
   {
     label: "iPhone 17",
-    description: "The ultimate premium tech prize — Brand new iPhone 17.",
     color: "url(#grad-ruby)", // Crimson Red
     textColor: "#ffed4a", // Bright Gold Text
     image: iphoneImg
   }
+];
+
+const DEFAULT_COLORS = [
+  "url(#grad-emerald)",
+  "url(#grad-gold)",
+  "url(#grad-sapphire)",
+  "url(#grad-amethyst)",
+  "url(#grad-ruby)",
+  "url(#grad-dark)",
 ];
 
 // ==========================================
@@ -119,27 +121,63 @@ interface SpinResponse {
   serverTimestamp: string;
 }
 
-const simulateServerSpin = async (forcedIndex: number | null): Promise<SpinResponse> => {
+const simulateServerSpin = async (forcedIndex: number | null, segments: Segment[], currentSpin: number | null): Promise<SpinResponse> => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      // Index 7 (iPhone 17) is STRICTLY excluded from the selection pool
-      const secureAllowedIndices = [0, 1, 2, 3, 4, 5, 6];
+      const spinNum = currentSpin || 1;
+      console.log("[SpinWheel] Current Spin Number (calculated from User count):", spinNum);
+      console.log("[SpinWheel] Segments with counts & afterWin:", segments.map(s => ({ label: s.label, count: s.count, afterWin: s.afterWin })));
+      
+      // 1. Check if any segment is rigged for this specific spin number
+      const riggedIndex = segments.findIndex(seg => seg.count !== undefined && seg.count !== null && Number(seg.count) === Number(spinNum));
 
       let finalIndex: number;
 
-      if (forcedIndex !== null) {
-        // Validation check: Server ignores attempts to force Index 7
-        if (forcedIndex === 7) {
-          console.warn("Server Rejected: Attempt to force selection of blacklisted Index 7 (iPhone 17). Falling back to random selection.");
-          const fallbackIdx = secureAllowedIndices[Math.floor(Math.random() * secureAllowedIndices.length)];
-          finalIndex = fallbackIdx;
-        } else {
-          finalIndex = forcedIndex;
-        }
+      if (riggedIndex !== -1) {
+        console.log("[SpinWheel] Found rigged prize for spin index:", riggedIndex);
+        finalIndex = riggedIndex;
       } else {
-        // Standard random selection from the safe index pool
-        const randomIndex = Math.floor(Math.random() * secureAllowedIndices.length);
-        finalIndex = secureAllowedIndices[randomIndex];
+        // 2. Filter allowed indices
+        // A segment is allowed if it is not rigged for a future spin (count === 0 || count < spinNum)
+        // AND it is randomly winnable (afterWin === 'random')
+        let randomIndices = segments
+          .map((seg, i) => {
+            const segCount = seg.count !== undefined ? Number(seg.count) : 0;
+            const isRiggedForFuture = segCount > Number(spinNum);
+            const isRandomWinnable = seg.afterWin === 'random';
+
+            if (!isRiggedForFuture && isRandomWinnable) {
+              return i;
+            }
+            return -1;
+          })
+          .filter(i => i !== -1);
+
+        // Fallback: If no segments are allowed randomly, allow any segment that:
+        // - Is not rigged for a future spin (count === 0 || count < spinNum)
+        // - AND is not a rigged prize set to disable after win (count > 0 && afterWin === 'disable')
+        if (randomIndices.length === 0) {
+          randomIndices = segments
+            .map((seg, i) => {
+              const segCount = seg.count !== undefined ? Number(seg.count) : 0;
+              const isRiggedForFuture = segCount > Number(spinNum);
+              const isRiggedPastDisable = segCount > 0 && seg.afterWin === 'disable';
+              
+              if (!isRiggedForFuture && !isRiggedPastDisable) {
+                return i;
+              }
+              return -1;
+            })
+            .filter(i => i !== -1);
+        }
+
+        // Ultimate fallback: if everything is rigged for the future, allow all segments
+        if (randomIndices.length === 0) {
+          randomIndices = segments.map((_, i) => i);
+        }
+
+        const randomIndex = Math.floor(Math.random() * randomIndices.length);
+        finalIndex = randomIndices[randomIndex];
       }
 
       const mockTxId = `TXN-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
@@ -155,24 +193,123 @@ const simulateServerSpin = async (forcedIndex: number | null): Promise<SpinRespo
   });
 };
 
+// ==========================================
+// Helper: Counter-rotating Text Label
+// ==========================================
+function TextLabel({
+  label,
+  textColor,
+  segAngle,
+  liveRotation,
+  radius,
+}: {
+  label: string;
+  textColor: string;
+  segAngle: number;
+  liveRotation: MotionValue<number>;
+  radius: number;
+}) {
+  // Counter-rotate by -(liveRotation + segAngle) so text is always horizontal
+  const counterRotate = useTransform(liveRotation, (r) => -(r + segAngle));
+  return (
+    <motion.g style={{ x: radius, y: 0, rotate: counterRotate }}>
+      <text
+        fill={textColor}
+        fontSize="13.5"
+        fontWeight="800"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        style={{ userSelect: 'none', fontFamily: 'sans-serif', letterSpacing: '0.05em' }}
+      >
+        {label}
+      </text>
+    </motion.g>
+  );
+}
+
+// ==========================================
+// Helper: Counter-rotating Image
+// ==========================================
+function ImageLabel({
+  href,
+  segAngle,
+  liveRotation,
+  radius,
+}: {
+  href: string;
+  segAngle: number;
+  liveRotation: MotionValue<number>;
+  radius: number;
+}) {
+  const counterRotate = useTransform(liveRotation, (r) => -(r + segAngle));
+  if (!href) return null;
+  
+  return (
+    <motion.g style={{ x: radius, y: 0, rotate: counterRotate }}>
+      <image
+        href={href}
+        x="-15"
+        y="-15"
+        height="30"
+        width="30"
+        preserveAspectRatio="xMidYMid slice"
+        clipPath="url(#image-clip)"
+        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
+      />
+    </motion.g>
+  );
+}
+
 export default function SpinWheel() {
+  const [segments, setSegments] = useState<Segment[]>(DEFAULT_SEGMENTS);
   const [isSpinning, setIsSpinning] = useState(false);
   const [winningIndex, setWinningIndex] = useState<number | null>(null);
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   
+  const fetchSegments = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/segments`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const mappedSegments = data.map((seg: any, idx: number) => ({
+            label: seg.label,
+            color: DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+            textColor: "#ffffff",
+            image: seg.imageURL 
+              ? (seg.imageURL.startsWith('/') ? `${import.meta.env.VITE_API_URL.replace('/api', '')}${seg.imageURL}` : seg.imageURL)
+              : "",
+            count: (seg.count === undefined || seg.count === null || seg.count === -1) ? 0 : seg.count,
+            afterWin: seg.afterWin || ((seg.count === -1 || seg.count === undefined) ? 'random' : 'disable')
+          }));
+          setSegments(mappedSegments);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch segments:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchSegments();
+  }, []);
+
   // Registration States
   const [isRegistered, setIsRegistered] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', invoice: '' });
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerError, setRegisterError] = useState('');
+  const [currentSpinNumber, setCurrentSpinNumber] = useState<number | null>(null);
 
   const forcedIndex = null;
 
   // Wheel animation states
   const [wheelRotation, setWheelRotation] = useState(0);
   const [pointerAngle, setPointerAngle] = useState(0);
+  // MotionValue to drive live SVG transform (fixes off-center rotation)
+  const liveRotation = useMotionValue(0);
 
   const lastPegIndex = useRef(0);
   const wiggleTimeoutRef = useRef<any>(null);
@@ -220,6 +357,8 @@ export default function SpinWheel() {
       if (!response.ok) {
         setRegisterError(data.error || 'Something went wrong');
       } else {
+        await fetchSegments();
+        setCurrentSpinNumber(data.spinNumber);
         setIsRegistered(true);
       }
     } catch (err) {
@@ -245,25 +384,43 @@ export default function SpinWheel() {
     return (window as any).globalAudioCtx as AudioContext;
   };
 
+  const initAudio = () => {
+    try {
+      const audioCtx = getAudioContext();
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      // Play a silent buffer to explicitly unlock audio engine on strict browsers (iOS Safari)
+      const buffer = audioCtx.createBuffer(1, 1, 22050);
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioCtx.destination);
+      source.start();
+    } catch (e) {
+      console.warn("Audio init failed:", e);
+    }
+  };
+
   const playTickSound = () => {
     if (!soundEnabled) return;
     const now = performance.now();
-    if (now - lastClickTime.current < 45) return; // Throttle overlapping sounds
+    if (now - lastClickTime.current < 30) return; // Throttle overlapping sounds
     lastClickTime.current = now;
 
     try {
       const audioCtx = getAudioContext();
       if (!audioCtx) return;
-      if (audioCtx.state === 'suspended') audioCtx.resume();
 
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(560, audioCtx.currentTime);
+      // Professional mechanical tick sound
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
 
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
 
       osc.connect(gain);
@@ -305,15 +462,32 @@ export default function SpinWheel() {
   };
 
   // SVG sector path generator
-  // Calculations for 8 segments (45 degrees each), centered around x-axis (from -22.5 to +22.5 degrees)
-  // R = 240
-  // cos(22.5) = 0.92388, sin(22.5) = 0.38268
-  // Arc starts at (R*cos(-22.5), R*sin(-22.5)) = (221.73, -91.84)
-  // Arc ends at   (R*cos(22.5),  R*sin(22.5))  = (221.73,  91.84)
-  const pathData = "M 0 0 L 221.73 -91.84 A 240 240 0 0 1 221.73 91.84 Z";
+  const getPathData = (segmentCount: number) => {
+    if (segmentCount === 0) return "";
+    const angle = 360 / segmentCount;
+    const halfAngle = angle / 2;
+    const rad = (halfAngle * Math.PI) / 180;
+    const R = 240;
+    const xEnd = R * Math.cos(rad);
+    const yEnd = R * Math.sin(rad);
+    const xStart = R * Math.cos(-rad);
+    const yStart = R * Math.sin(-rad);
+    return `M 0 0 L ${xStart.toFixed(2)} ${yStart.toFixed(2)} A 240 240 0 0 1 ${xEnd.toFixed(2)} ${yEnd.toFixed(2)} Z`;
+  };
+  const pathData = getPathData(segments.length || 1);
+  const anglePerSegment = 360 / (segments.length || 1);
+
+  useEffect(() => {
+    // Only set initial alignment when segment list changes, not when winningIndex changes
+    const targetOffset = (270 - 0 * anglePerSegment + 360) % 360;
+    setWheelRotation(targetOffset);
+    liveRotation.set(targetOffset);
+  }, [segments.length, anglePerSegment, liveRotation]);
 
   const handleSpin = async () => {
     if (isSpinning) return;
+
+    initAudio(); // Unlock audio context on user gesture to prevent autoplay bugs
 
     setIsSpinning(true);
     setShowModal(false);
@@ -325,11 +499,11 @@ export default function SpinWheel() {
 
     try {
       // Fetch spin result from mock secure server
-      const response = await simulateServerSpin(forcedIndex);
+      const response = await simulateServerSpin(forcedIndex, segments, currentSpinNumber);
 
       addLog(`API Response: Code 200 OK.`);
       addLog(`Secure TxID: ${response.transactionId}`);
-      addLog(`Winning Segment Determined: [${response.winningIndex}] (${SEGMENTS[response.winningIndex].label})`);
+      addLog(`Winning Segment Determined: [${response.winningIndex}] (${segments[response.winningIndex]?.label})`);
       addLog(`Crypto Signature Verified: ${response.signature.substring(0, 16)}...`);
 
       setWinningIndex(response.winningIndex);
@@ -337,7 +511,7 @@ export default function SpinWheel() {
 
       // Determine final rotation value
       // Peg is at the top (270 degrees)
-      const targetOffset = (270 - response.winningIndex * 45 + 360) % 360;
+      const targetOffset = (270 - response.winningIndex * anglePerSegment + 360) % 360;
       const currentModulo = wheelRotation % 360;
 
       // Make it spin 5 full rotations (1800 deg) plus the offset
@@ -347,14 +521,14 @@ export default function SpinWheel() {
       addLog(`Calculation: Current Angle = ${wheelRotation.toFixed(1)}°, Next Target Angle = ${nextRotation.toFixed(1)}°`);
 
       // Reset last peg pointer
-      lastPegIndex.current = Math.floor((wheelRotation + 22.5) / 45);
+      lastPegIndex.current = Math.floor((wheelRotation + (anglePerSegment / 2)) / anglePerSegment);
 
-      // Animate the wheel rotation
+      // Animate the wheel rotation via liveRotation MotionValue so SVG rotates around its own origin (0,0)
       controls.start({
         rotate: nextRotation,
         transition: {
           duration: 5.5,
-          ease: [0.15, 0.85, 0.2, 1] // Custom ease curve for long cinematic slowdown
+          ease: [0.15, 0.85, 0.2, 1]
         }
       });
 
@@ -407,14 +581,14 @@ export default function SpinWheel() {
     triggerConfetti();
     playWinSound();
 
-    if (winningIndex !== null && formData.invoice) {
+    if (winningIndex !== null && formData.invoice && segments[winningIndex]) {
       try {
         await fetch(`${import.meta.env.VITE_API_URL}/update-prize`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             invoice: formData.invoice,
-            prize: SEGMENTS[winningIndex].label
+            prize: segments[winningIndex].label
           })
         });
       } catch (e) {
@@ -447,7 +621,10 @@ export default function SpinWheel() {
           {/* HUD info */}
           <div className="w-full flex justify-end items-center mb-4 z-10">
             <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
+              onClick={() => {
+                if (!soundEnabled) initAudio(); // Initialize when turning sound on
+                setSoundEnabled(!soundEnabled);
+              }}
               className="p-3 rounded-full bg-white hover:bg-pink-50 transition-colors border border-pink-200 text-rose-500 hover:text-rose-600 cursor-pointer shadow-sm"
               title={soundEnabled ? "Mute audio" : "Unmute audio"}
               id="btn-sound-toggle"
@@ -552,12 +729,16 @@ export default function SpinWheel() {
                 <circle r="248" fill="none" stroke="url(#goldGradient)" strokeWidth="6" />
                 <circle r="245" fill="#fff5f7" />
 
-                {/* Rotating Wedge Container */}
+                {/* Rotating Wedge Container
+                    Uses a native SVG transform driven by motion.g's onUpdate
+                    to guarantee rotation always around SVG origin (0,0) */}
                 <motion.g
                   animate={controls}
                   onUpdate={(latest) => {
                     const rot = typeof latest.rotate === 'number' ? latest.rotate : parseFloat((latest.rotate as string) || '0');
-                    const currentPeg = Math.floor((rot + 22.5) / 45);
+                    // Update liveRotation so the SVG transform reflects the actual animated value
+                    liveRotation.set(rot);
+                    const currentPeg = Math.floor((rot + (anglePerSegment / 2)) / anglePerSegment);
                     if (currentPeg !== lastPegIndex.current) {
                       lastPegIndex.current = currentPeg;
                       setPointerAngle(-16);
@@ -567,12 +748,17 @@ export default function SpinWheel() {
                     }
                   }}
                   onAnimationComplete={handleAnimationComplete}
-                  style={{ transformOrigin: '0px 0px' }}
-                >
-                  {SEGMENTS.map((seg, idx) => {
-                    const angle = idx * 45;
+                  style={{ display: 'none' }} // hidden — only used for animation timing
+                />
+
+                {/* Real visual wheel group — driven by liveRotation (always rotates around SVG origin 0,0) */}
+                <motion.g style={{ rotate: liveRotation, transformOrigin: 'center' }}>
+                  {/* Invisible symmetrical boundary to force bounding-box center to exactly 0,0 cross-browser */}
+                  <circle r="400" cx="0" cy="0" fill="transparent" pointerEvents="none" />
+                  {segments.map((seg, idx) => {
+                    const segAngle = idx * anglePerSegment;
                     return (
-                      <g key={idx} transform={`rotate(${angle})`}>
+                      <g key={idx} transform={`rotate(${segAngle})`}>
                         {/* Wedge slice */}
                         <path
                           d={pathData}
@@ -582,17 +768,7 @@ export default function SpinWheel() {
                           strokeLinejoin="round"
                         />
 
-                        {/* Gold overlay for iPhone segment */}
-                        {idx === 7 && (
-                          <path
-                            d={pathData}
-                            fill="url(#goldGradient)"
-                            opacity="0.18"
-                            style={{ mixBlendMode: 'overlay' }}
-                          />
-                        )}
-
-                        {/* Outer peg */}
+                        {/* Outer peg on each segment border */}
                         <circle
                           cx="241"
                           cy="0"
@@ -600,37 +776,25 @@ export default function SpinWheel() {
                           fill="url(#goldGradient)"
                           stroke="#fff"
                           strokeWidth="1"
-                          transform="rotate(22.5)"
+                          transform={`rotate(${anglePerSegment / 2})`}
                         />
 
-                        {/* Text Label */}
-                        <g transform="translate(130, 0)">
-                          <text
-                            fill={seg.textColor}
-                            fontSize="12.5"
-                            fontWeight="800"
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            className="select-none font-sans tracking-wide"
-                            transform="rotate(0)"
-                          >
-                            {seg.label}
-                          </text>
-                        </g>
+                        {/* Text Label — counter-rotated so it stays horizontal */}
+                        <TextLabel
+                          label={seg.label}
+                          textColor={seg.textColor}
+                          segAngle={segAngle}
+                          liveRotation={liveRotation}
+                          radius={130}
+                        />
 
-                        {/* Image */}
-                        <g transform="translate(195, 0) rotate(90)">
-                          <image
-                            href={seg.image}
-                            x="-14"
-                            y="-14"
-                            height="28"
-                            width="28"
-                            preserveAspectRatio="xMidYMid slice"
-                            clipPath="url(#image-clip)"
-                            style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))" }}
-                          />
-                        </g>
+                        {/* Image — counter-rotated so it stays upright */}
+                        <ImageLabel
+                          href={seg.image}
+                          segAngle={segAngle}
+                          liveRotation={liveRotation}
+                          radius={200}
+                        />
                       </g>
                     );
                   })}
@@ -729,6 +893,7 @@ export default function SpinWheel() {
           <div className="absolute inset-0" onClick={() => {
             setShowModal(false);
             setIsRegistered(false);
+            setCurrentSpinNumber(null);
             setFormData({ name: '', email: '', phone: '', invoice: '' });
           }} />
 
@@ -744,7 +909,7 @@ export default function SpinWheel() {
 
             {/* Glowing Icon Frame */}
             <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-b from-rose-100 to-transparent flex items-center justify-center border border-pink-200 mb-6 shadow-lg relative">
-              <img src={SEGMENTS[winningIndex].image} className="w-14 h-14 rounded-full shadow-md object-cover" alt="" />
+              <img src={segments[winningIndex].image} className="w-14 h-14 rounded-full shadow-md object-cover" alt="" />
               <div className="absolute inset-0 rounded-full border border-pink-300 animate-ping opacity-25" />
             </div>
 
@@ -753,13 +918,13 @@ export default function SpinWheel() {
               Reward Unlocked
             </span>
             <h2 className="text-2xl md:text-3xl font-extrabold font-display text-slate-800 mb-2 leading-tight">
-              {SEGMENTS[winningIndex].label === "Better Luck Next Time" ? "Thanks for Spinning!" : "Congratulations!"}
+              {segments[winningIndex]?.label === "Better Luck Next Time" ? "Thanks for Spinning!" : "Congratulations!"}
             </h2>
 
-            <p className="text-sm text-slate-600 mb-6 max-w-xs mx-auto leading-relaxed">
-              {SEGMENTS[winningIndex].label === "Better Luck Next Time"
-                ? SEGMENTS[winningIndex].description
-                : <>You've won <span className="text-rose-600 font-bold">{SEGMENTS[winningIndex].label}</span>. {SEGMENTS[winningIndex].description}</>}
+            <p className="text-xl text-slate-700 mb-6 max-w-xs mx-auto leading-relaxed">
+              {segments[winningIndex]?.label === "Better Luck Next Time"
+                ? "Don't lose heart, try another spin!"
+                : <>You've won <span className="text-rose-600 font-bold">{segments[winningIndex]?.label}</span>!</>}
             </p>
 
             <div className="flex items-center justify-center gap-1 text-[9px] text-pink-400 font-mono mb-6 uppercase tracking-wider">
@@ -772,6 +937,7 @@ export default function SpinWheel() {
                 onClick={() => {
                   setShowModal(false);
                   setIsRegistered(false);
+                  setCurrentSpinNumber(null);
                   setFormData({ name: '', email: '', phone: '', invoice: '' });
                 }}
                 className="py-3 px-4 rounded-xl border border-pink-200 hover:bg-pink-50 transition-colors font-bold text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
@@ -784,6 +950,7 @@ export default function SpinWheel() {
                 onClick={() => {
                   setShowModal(false);
                   setIsRegistered(false);
+                  setCurrentSpinNumber(null);
                   setFormData({ name: '', email: '', phone: '', invoice: '' });
                 }}
                 className="py-3 px-4 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer bg-rose-500 border border-rose-400 hover:bg-rose-600 text-white shadow-md shadow-rose-200"

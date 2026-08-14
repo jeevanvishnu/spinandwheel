@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import SpinWheel from './components/SpinWheel';
 import AdminView from './components/AdminView';
+import AdminSpin from './components/AdminSpin';
 
 function App() {
   const path = window.location.pathname;
@@ -22,7 +23,13 @@ function App() {
 
   return (
     <main className="w-full min-h-screen bg-gradient-to-br from-[#fff0f5] via-[#ffe4e1] to-[#ffd1dc]">
-      {path === '/admin/view' ? <AdminView /> : <SpinWheel />}
+      {path === '/admin/view' ? (
+        <AdminView />
+      ) : path === '/admin/spin' ? (
+        <AdminSpin />
+      ) : (
+        <SpinWheel />
+      )}
     </main>
   );
 }
