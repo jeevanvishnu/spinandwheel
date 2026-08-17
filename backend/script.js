@@ -48,7 +48,7 @@ mongoose.connect(mongo_url)
 // User Schema
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true },
+  city: { type: String, required: true },
   phone: { type: String, required: true },
   invoice: { type: String, required: true, unique: true },
   prize: { type: String, default: 'Pending' },
@@ -74,10 +74,10 @@ const Settings = mongoose.model('Settings', settingsSchema);
 // Register Endpoint
 app.post('/api/register', async (req, res) => {
   try {
-    const { name, email, phone, invoice } = req.body;
+    const { name, city, phone, invoice } = req.body;
 
     // Basic validation
-    if (!name || !email || !phone || !invoice) {
+    if (!name || !city || !phone || !invoice) {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
@@ -88,7 +88,7 @@ app.post('/api/register', async (req, res) => {
     }
 
     // Create new user
-    const newUser = new User({ name, email, phone, invoice });
+    const newUser = new User({ name, city, phone, invoice });
     await newUser.save();
 
     const spinNumber = await User.countDocuments();
@@ -118,10 +118,10 @@ app.get('/api/admin/users', async (req, res) => {
 app.put('/api/admin/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, invoice, prize } = req.body;
+    const { name, city, phone, invoice, prize } = req.body;
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { name, email, phone, invoice, prize },
+      { name, city, phone, invoice, prize },
       { new: true, runValidators: true }
     );
     if (!updatedUser) {

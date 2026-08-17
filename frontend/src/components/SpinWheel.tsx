@@ -287,7 +287,7 @@ export default function SpinWheel() {
 
   // Registration States
   const [isRegistered, setIsRegistered] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', invoice: '' });
+  const [formData, setFormData] = useState({ name: '', city: '', phone: '', invoice: '' });
   const [isRegistering, setIsRegistering] = useState(false);
   const [registerError, setRegisterError] = useState('');
   const [currentSpinNumber, setCurrentSpinNumber] = useState<number | null>(null);
@@ -316,9 +316,8 @@ export default function SpinWheel() {
       setRegisterError('Name must be at least 2 characters long');
       return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setRegisterError('Please enter a valid email address');
+    if (formData.city.trim().length < 2) {
+      setRegisterError('Please enter a valid city or address');
       return;
     }
     const phoneRegex = /^\+?[0-9]{8,15}$/;
@@ -880,7 +879,7 @@ export default function SpinWheel() {
             setShowModal(false);
             setIsRegistered(false);
             setCurrentSpinNumber(null);
-            setFormData({ name: '', email: '', phone: '', invoice: '' });
+            setFormData({ name: '', city: '', phone: '', invoice: '' });
           }} />
 
           <motion.div
@@ -924,7 +923,7 @@ export default function SpinWheel() {
                   setShowModal(false);
                   setIsRegistered(false);
                   setCurrentSpinNumber(null);
-                  setFormData({ name: '', email: '', phone: '', invoice: '' });
+                  setFormData({ name: '', city: '', phone: '', invoice: '' });
                 }}
                 className="py-3 px-4 rounded-xl border border-pink-200 hover:bg-pink-50 transition-colors font-bold text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
                 id="btn-close-modal"
@@ -937,7 +936,7 @@ export default function SpinWheel() {
                   setShowModal(false);
                   setIsRegistered(false);
                   setCurrentSpinNumber(null);
-                  setFormData({ name: '', email: '', phone: '', invoice: '' });
+                  setFormData({ name: '', city: '', phone: '', invoice: '' });
                 }}
                 className="py-3 px-4 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer bg-rose-500 border border-rose-400 hover:bg-rose-600 text-white shadow-md shadow-rose-200"
                 id="btn-modal-spin-again"
@@ -986,14 +985,14 @@ export default function SpinWheel() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">City / Address</label>
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-pink-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none transition-all bg-white/50"
-                  placeholder="Enter your email"
+                  placeholder="Enter your city or address"
                 />
               </div>
               <div>

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 interface UserData {
   _id: string;
   name: string;
-  email: string;
+  city: string;
   phone: string;
   invoice: string;
   prize?: string;
@@ -66,7 +66,7 @@ export default function AdminView() {
         },
         body: JSON.stringify({
           name: editingUser.name,
-          email: editingUser.email,
+          city: editingUser.city,
           phone: editingUser.phone,
           invoice: editingUser.invoice,
           prize: editingUser.prize
@@ -127,7 +127,7 @@ export default function AdminView() {
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.phone.includes(searchQuery) ||
     user.invoice.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (user.prize && user.prize.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -199,7 +199,7 @@ export default function AdminView() {
                       <td className="px-6 py-4 font-medium text-slate-800">{user.name}</td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
-                          <span>{user.email}</span>
+                          <span>{user.city}</span>
                           <span className="text-xs text-slate-400">{user.phone}</span>
                         </div>
                       </td>
@@ -285,8 +285,8 @@ export default function AdminView() {
               </div>
 
               <div className="col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Email Address</p>
-                <p className="font-medium text-slate-800 text-sm">{selectedUser.email}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">City / Address</p>
+                <p className="font-medium text-slate-800 text-sm">{selectedUser.city}</p>
               </div>
 
               <div className="col-span-2 sm:col-span-1 bg-slate-50 p-3 rounded-xl border border-slate-100">
@@ -360,12 +360,12 @@ export default function AdminView() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Email</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">City / Address</label>
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={editingUser.email}
-                  onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                  value={editingUser.city}
+                  onChange={(e) => setEditingUser({ ...editingUser, city: e.target.value })}
                   className="w-full px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
                 />
               </div>
