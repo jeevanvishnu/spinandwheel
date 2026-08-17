@@ -317,10 +317,10 @@ export default function SpinWheel() {
       return;
     }
     if (formData.city.trim().length < 2) {
-      setRegisterError('Please enter a valid city or address');
+      setRegisterError('Please enter a valid city');
       return;
     }
-    const phoneRegex = /^\+?[0-9]{8,15}$/;
+    const phoneRegex = /^\+?\d+$/;
     if (!phoneRegex.test(formData.phone.trim())) {
       setRegisterError('Please enter a valid phone number');
       return;
@@ -985,14 +985,14 @@ export default function SpinWheel() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">City / Address</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">City</label>
                 <input
                   type="text"
                   required
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-pink-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none transition-all bg-white/50"
-                  placeholder="Enter your city or address"
+                  placeholder="Enter your city"
                 />
               </div>
               <div>

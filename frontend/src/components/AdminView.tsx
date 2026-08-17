@@ -50,9 +50,9 @@ export default function AdminView() {
       return;
     }
 
-    const phoneRegex = /^\+?[\d\s-]{10,15}$/;
+    const phoneRegex = /^\+?\d+$/;
     if (!phoneRegex.test(editingUser.phone.trim())) {
-      setValidationError('Please enter a valid phone number (10-15 digits)');
+      setValidationError('Please enter a valid phone number');
       return;
     }
 
@@ -285,7 +285,7 @@ export default function AdminView() {
               </div>
 
               <div className="col-span-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">City / Address</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">City</p>
                 <p className="font-medium text-slate-800 text-sm">{selectedUser.city}</p>
               </div>
 
@@ -360,7 +360,7 @@ export default function AdminView() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">City / Address</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">City</label>
                 <input
                   type="text"
                   required
